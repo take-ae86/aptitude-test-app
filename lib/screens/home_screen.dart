@@ -32,7 +32,7 @@ class HomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
-                        const Icon(Icons.school, size: 64, color: Color(0xFF1565C0)),
+                        Image.asset('assets/logo.png', width: 64, height: 64),
                         const SizedBox(height: 16),
                         const Text(
                           '適性検査対策アプリ',
