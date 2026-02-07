@@ -187,18 +187,21 @@ class _CabLawPageState extends State<CabLawPage> {
   }
 
   Widget _buildResultView() {
-    int correct = 0;
+    int correctCount = 0;
     for(int i=0; i<_problems.length; i++) {
-      if(_userAnswers[i] == _problems[i].correctAnswer) correct++;
+      if(_userAnswers[i] == _problems[i].correctAnswer) correctCount++;
     }
     
-    int percentage = _problems.isEmpty ? 0 : ((correct / _problems.length) * 100).toInt();
+    double percentage = _problems.isEmpty ? 0.0 : (correctCount / _problems.length);
+    int percentageInt = (percentage * 100).toInt();
+    
     Color gaugeColor;
-    if (percentage == 100) gaugeColor = Colors.purple;
-    else if (percentage >= 80) gaugeColor = Colors.indigo;
-    else if (percentage >= 60) gaugeColor = Colors.green;
-    else if (percentage >= 40) gaugeColor = Colors.pink;
-    else gaugeColor = Colors.red;
+    if (percentageInt == 100) gaugeColor = Colors.purple;
+    else if (percentageInt >= 80) gaugeColor = Colors.indigo;
+    else if (percentageInt >= 60) gaugeColor = Colors.green;
+    else if (percentageInt >= 40) gaugeColor = Colors.pink;
+    else if (percentageInt >= 20) gaugeColor = Colors.red;
+    else gaugeColor = Colors.grey;
 
     return Column(
       children: [
@@ -209,36 +212,70 @@ class _CabLawPageState extends State<CabLawPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4, offset: const Offset(0, 2))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2))],
             ),
             child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.psychology, size: 80, color: gaugeColor),
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: Stack(
+                        children: [
+                          if (percentageInt == 0)
+                            const Icon(Icons.psychology_outlined, size: 100, color: Colors.grey)
+                          else
+                            const Icon(Icons.psychology, size: 100, color: Color(0xFFEEEEEE)),
+                          
+                          if (percentageInt > 0)
+                            Align(
+                              alignment: Alignment.bottomCenter,
+                              child: ClipRect(
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  heightFactor: percentage,
+                                  child: Icon(Icons.psychology, size: 100, color: gaugeColor),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(width: 20),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('$percentage%', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: gaugeColor)),
-                        Text('$correct / ${_problems.length} 問正解', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text('タイム: ${_formatTime(_elapsedSeconds)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text('$percentageInt', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: percentageInt == 0 ? Colors.grey : gaugeColor)),
+                            Text('%', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: percentageInt == 0 ? Colors.grey : gaugeColor)),
+                          ],
+                        ),
+                        const Text('正解率', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text('$correctCount / ${_problems.length} 問正解', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        Text('タイム: ${_formatTime(_elapsedSeconds)}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 SizedBox(
-                  width: double.infinity,
+                  width: 180,
+                  height: 40,
                   child: ElevatedButton(
                     onPressed: _startQuiz,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green, 
                       foregroundColor: Colors.white,
+                      elevation: 2,
                       shape: const StadiumBorder(),
                     ),
-                    child: const Text('新しい問題に挑戦'),
+                    child: const Text('新しい問題に挑戦', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -248,7 +285,7 @@ class _CabLawPageState extends State<CabLawPage> {
         
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             itemCount: _problems.length,
             itemBuilder: (context, index) {
               final p = _problems[index];
@@ -256,17 +293,21 @@ class _CabLawPageState extends State<CabLawPage> {
               final isCorrect = ans == p.correctAnswer;
               
               return Card(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.only(bottom: 4),
+                elevation: 1,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 child: ExpansionTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                   title: Row(
                     children: [
-                      Icon(isCorrect ? Icons.check_circle : Icons.cancel, color: isCorrect ? Colors.green : Colors.red),
+                      Icon(isCorrect ? Icons.check_circle : Icons.cancel, color: isCorrect ? Colors.green : Colors.red, size: 18),
                       const SizedBox(width: 8),
-                      Text('第${index+1}問'),
+                      Text('第${index+1}問', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     ],
                   ),
-                  subtitle: Text(isCorrect ? '正解 (回答: $ans)' : '不正解 (回答: $ans, 正解: ${p.correctAnswer})'),
+                  subtitle: Text(isCorrect ? '正解 (回答: $ans)' : '不正解 (回答: $ans, 正解: ${p.correctAnswer})', style: const TextStyle(fontSize: 11, color: Colors.black54)),
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(12),
